@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>しりとりゲーム</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <h1>しりとり</h1>
+    <p id="previousWord">読み込み中...</p>
+    <input id="nextWordInput" type="text" placeholder="次の単語を入力" />
+    <button id="nextWordSendButton">送信</button>
+
+    <script>
+        window.onload = async () => {
+            try {
+                const response = await fetch("/shiritori", { method: "GET" });
+                if (!response.ok) throw new Error("サーバーエラー");
+                const previousWord = await response.text();
+                const paragraph = document.querySelector("#previousWord");
+
+                if (paragraph) {
+                    paragraph.innerHTML = `前の単語: ${previousWord}`;
+                } else {
+                    console.error("要素が見つかりません");
+                }
+            } catch (error) {
+                console.error("エラーが発生しました", error);
+            }
+        };
+
+        document.querySelector("#nextWordSendButton").onclick = async () => {
+            const nextWordInput = document.querySelector("#nextWordInput");
+            if (!nextWordInput) return;
+
+            const nextWordInputText = nextWordInput.value.trim();
+            if (!nextWordInputText) {
+                alert("単語を入力してください");
+                return;
+            }
+
+            try {
+                const response = await fetch("/shiritori", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ nextWord: nextWordInputText })
+                });
+
+                if (!response.ok) {
+                    const errorJson = await response.json();
+                    alert(errorJson["errorMessage"]);
+                    return;
+                }
+
+                const previousWord = await response.text();
+                const paragraph = document.querySelector("#previousWord");
+                if (paragraph) {
+                    paragraph.innerHTML = `前の単語: ${previousWord}`;
+                } else {
+                    console.error("要素が見つかりません");
+                }
+
+                nextWordInput.value = ""; // 入力欄をリセット
+
+            } catch (error) {
+                console.error("エラーが発生しました", error);
+            }
+        };
+    </script>
+</body>
+</html>
